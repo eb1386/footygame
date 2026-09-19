@@ -102,7 +102,7 @@ export function simulateMatch(home: ResolvedTeam, away: ResolvedTeam, ctx: Match
     const styleMod = STYLE_MODIFIERS[attacker.style].chanceVolume;
     const homeMod = isHome ? 1 + ctx.homeAdvantage * (HOME_ADVANTAGE_CHANCES - 1) : 1;
     const possessionMod = 0.62 + possession * 0.76;
-    return clamp(BASE_CHANCES_PER_TEAM * (1 + edge * 1.75) * styleMod * homeMod * possessionMod, 3.2, 26);
+    return clamp(BASE_CHANCES_PER_TEAM * (1 + edge * 1.75) * styleMod * homeMod * possessionMod, 5.2, 26);
   };
 
   const rates = {
