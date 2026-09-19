@@ -34,9 +34,9 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 // Calibration constants. Tuned so a full league season lands on realistic distributions:
 // ~2.7 goals per game, ~45% home wins, ~25% draws, and strong sides beating weak ones
 // roughly 70% of the time without making upsets impossible.
-const BASE_CHANCES_PER_TEAM = 13.0;
-const HOME_ADVANTAGE_CHANCES = 1.11;
-const HOME_ADVANTAGE_DEFENCE = 0.055;
+const BASE_CHANCES_PER_TEAM = 13.6;
+const HOME_ADVANTAGE_CHANCES = 1.16;
+const HOME_ADVANTAGE_DEFENCE = 0.07;
 
 interface SideState {
   team: ResolvedTeam;
@@ -105,9 +105,17 @@ export function simulateMatch(home: ResolvedTeam, away: ResolvedTeam, ctx: Match
     return clamp(BASE_CHANCES_PER_TEAM * (1 + edge * 1.75) * styleMod * homeMod * possessionMod, 5.2, 26);
   };
 
+  // Football is more over-dispersed than a flat per-minute probability implies: sides have
+  // days where everything comes off and days where nothing does. Without this the score
+  // distribution is too tightly Poisson and roughly a third of matches end level, well above
+  // the ~25% real leagues produce.
+  const form = {
+    home: clamp(rng.normal(1, 0.22), 0.55, 1.7),
+    away: clamp(rng.normal(1, 0.22), 0.55, 1.7),
+  };
   const rates = {
-    home: expectedChances(home, away, homePossession, true),
-    away: expectedChances(away, home, 1 - homePossession, false),
+    home: expectedChances(home, away, homePossession, true) * form.home,
+    away: expectedChances(away, home, 1 - homePossession, false) * form.away,
   };
 
   // ---- Minute loop --------------------------------------------------------
@@ -329,8 +337,9 @@ function resolveChance(
   // first and then applying xG again would count the same reduction twice.
   const keeper = defending.team.keeper;
   const keeperQuality = keeper ? keeper.goalkeeping : 62;
-  const finishing = (shooter.attack - 70) / 500;
-  const conversion = clamp(xg * (1 - (keeperQuality - 70) / 260) + finishing, 0.008, 0.95);
+  // Finishing is the shooter measured against the goalkeeper, not against a fixed number:
+  // an absolute baseline quietly rescales the whole game whenever the rating model moves.
+  const conversion = clamp(xg * (1 + (shooter.attack - keeperQuality) / 300), 0.008, 0.95);
 
   if (rng.chance(conversion)) {
     attacking.stats.shotsOnTarget++;
@@ -356,7 +365,7 @@ function resolveChance(
   }
 
   // Not a goal. Was it on target? Better chances and better finishers hit the target more.
-  const onTarget = clamp(0.24 + xg * 0.55 + (shooter.attack - 70) / 420, 0.12, 0.7);
+  const onTarget = clamp(0.24 + xg * 0.55 + (shooter.attack - keeperQuality) / 500, 0.12, 0.7);
   if (rng.chance(onTarget)) {
     attacking.stats.shotsOnTarget++;
     defending.stats.saves++;

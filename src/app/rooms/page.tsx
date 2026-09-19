@@ -16,7 +16,7 @@ export default function RoomsPage() {
           <Link key={r.code} className="member-row" href={`/room/${r.code}`} style={{ textDecoration: 'none' }}>
             <div className="avatar">{r.phase === 'complete' ? '🏆' : '⚽'}</div>
             <div className="grow">
-              <div style={{ fontWeight: 900, textTransform: 'uppercase' }}>{r.mode.replace(/-/g, ' ')}</div>
+              <div className="nm">{r.mode.replace(/-/g, ' ')}</div>
               <div className="label">{r.code} · {r.players} players · {r.champion ? `Won by ${r.champion}` : r.phase}</div>
             </div>
             <div style={{ fontWeight: 900 }}>→</div>

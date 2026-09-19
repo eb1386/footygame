@@ -10,7 +10,7 @@
 //   * P569       — date of birth
 //   * P27        — country of citizenship (nationality)
 //   * P413       — position played on team
-import { fetchWikidataByTitles, readRaw, writeRaw, log } from './lib/wiki.mjs';
+import { fetchWikidataByTitles, fetchWikidataLabels, readRaw, writeRaw, log } from './lib/wiki.mjs';
 
 const POSITION_LABELS = {
   Q201330: 'GK', // goalkeeper
@@ -46,21 +46,16 @@ function allClaimIds(entity, prop) {
 }
 
 async function labelsFor(ids) {
-  // Nationality claims are Q-ids; resolve them to readable country names in batches.
+  // Nationality claims are Q-ids; resolve them to readable country names in batches, through
+  // the shared throttled queue so Wikimedia's rate limiter does not silently drop most of them.
   const out = {};
   const unique = [...new Set(ids)];
   for (let i = 0; i < unique.length; i += 50) {
-    const chunk = unique.slice(i, i + 50);
-    const url =
-      'https://www.wikidata.org/w/api.php?action=wbgetentities&format=json&formatversion=2&languages=en&props=labels&ids=' +
-      chunk.join('|');
-    const res = await fetch(url, { headers: { 'User-Agent': 'ElNipGame-DataPipeline/1.0' } });
-    if (!res.ok) continue;
-    const json = await res.json();
-    for (const [id, ent] of Object.entries(json.entities || {})) {
+    const entities = await fetchWikidataLabels(unique.slice(i, i + 50));
+    if (!entities) continue;
+    for (const [id, ent] of Object.entries(entities)) {
       if (ent?.labels?.en?.value) out[id] = ent.labels.en.value;
     }
-    await new Promise((r) => setTimeout(r, 400));
   }
   return out;
 }
@@ -95,6 +90,9 @@ async function main() {
   log(`  ${titles.length - todo.length} already cached, ${todo.length} to fetch.`);
 
   const nationalityIds = new Set();
+  for (const rec of Object.values(known)) {
+    for (const id of rec?.nationalityIds || []) nationalityIds.add(id);
+  }
   let done = 0;
 
   for (let i = 0; i < todo.length; i += 50) {

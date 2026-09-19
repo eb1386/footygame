@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { Crest, ratingBand } from '@/app/crest';
 
 interface Squad { id: string; teamName: string; teamCode: string; season: string; kind: string; country: string | null; strength: number; competitionName: string; era: string; }
 interface Player { id: string; name: string; position: string; overall: number; shirt: number | null; nationality: string | null; }
@@ -51,21 +52,29 @@ export default function AlbumPage() {
           <button key={s.id} className="comp-card" onClick={() => {
             fetch('/api/album?squad=' + encodeURIComponent(s.id)).then((r) => r.json()).then(setOpen);
           }}>
-            <div className="bar" style={{ background: s.kind === 'nation' ? '#ffd12e' : '#2f7bff' }} />
-            <h3 style={{ fontSize: '1rem' }}>{s.teamName}</h3>
-            <div className="label" style={{ color: 'inherit', opacity: 0.7 }}>{s.season} · {s.competitionName}</div>
-            <div className="big-number" style={{ fontSize: '1.6rem' }}>{s.strength}</div>
+            <div className="bar" style={{ background: s.kind === 'nation' ? '#ffd02e' : '#2f6bff' }} />
+            <div className="body">
+              <div className="row">
+                <Crest name={s.teamName} code={s.teamCode} size={30} />
+                <h3 style={{ fontSize: '0.98rem' }}>{s.teamName}</h3>
+              </div>
+              <div className="label">{s.season} · {s.competitionName}</div>
+              <div className="big-number" style={{ fontSize: '1.5rem' }}>{s.strength}</div>
+            </div>
           </button>
         ))}
       </div>
 
       {open && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.65)', zIndex: 50, display: 'grid', placeItems: 'center', padding: 12 }} onClick={() => setOpen(null)}>
-          <div className="block" style={{ width: '100%', maxWidth: 560, maxHeight: '88vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
+        <div className="modal-backdrop" onClick={() => setOpen(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="spread">
-              <div>
+              <div className="row">
+                <Crest name={open.squad.teamName} code={open.squad.teamCode} size={38} />
+                <div>
                 <h3>{open.squad.teamName}</h3>
                 <div className="label">{open.squad.season} · {open.squad.competitionName}</div>
+                </div>
               </div>
               <button className="btn btn-sm btn-ghost" onClick={() => setOpen(null)}>Close</button>
             </div>
@@ -77,7 +86,7 @@ export default function AlbumPage() {
                     <div className="nm">{p.name}</div>
                     <div className="meta">{p.shirt ? `#${p.shirt} · ` : ''}{p.nationality || ''}</div>
                   </div>
-                  <div className="ovr">{p.overall}</div>
+                  <div className="ovr" data-band={ratingBand(p.overall)}>{p.overall}</div>
                 </div>
               ))}
             </div>

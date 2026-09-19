@@ -14,7 +14,7 @@ import type { PlayingStyle } from '../src/lib/core/types.ts';
 
 const ds = dataset();
 const deps = { playersById: ds.playersById, squadsById: ds.squadsById };
-const pool = draftPool('premier-league', true);
+const pool = draftPool('premier-league');
 const field = competitionSquads('premier-league');
 
 // Build twenty AI-drafted teams, exactly as a real room would.

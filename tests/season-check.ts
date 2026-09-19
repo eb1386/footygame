@@ -9,11 +9,17 @@ const mode = (process.argv[2] || 'premier-league') as 'premier-league' | 'champi
 const field = competitionSquads(mode);
 const count = { 'premier-league': 20, 'la-liga': 20, 'champions-league': 36, 'world-cup': 48 }[mode];
 
+// Mirror what a real room does: AI clubs draft to their stature, so the field spreads out.
+const ranked = [...field.slice(0, count)].sort((a, b) => b.strength - a.strength);
+const rankOf = new Map(ranked.map((s, i) => [s.id, i / Math.max(1, ranked.length - 1)]));
+
 const entries = field.slice(0, count).map((squad, i) => {
+  const rank = rankOf.get(squad.id) ?? 0.5;
+  const difficulty = rank < 0.3 ? 'ruthless' : rank > 0.7 ? 'casual' : 'normal';
   const draft = runAiDraft(
-    { seed: `s-${i}`, squadPool: draftPool(mode, true), rerolls: 5, allowDuplicatePlayers: false, allowDuplicateSquads: false },
+    { seed: `s-${i}`, squadPool: draftPool(mode), rerolls: 5, allowDuplicatePlayers: false, allowDuplicateSquads: false },
     deps,
-    'normal',
+    difficulty,
   );
   return {
     id: 'e' + i, teamName: squad.teamName, teamCode: squad.teamCode, badge: '',
@@ -48,3 +54,15 @@ if (mode === 'premier-league' || mode === 'la-liga') {
   const stages = [...new Set(state.fixtures.map((f) => f.stage))];
   for (const s of stages) console.log(`  ${s}: ${state.fixtures.filter((f) => f.stage === s).length} matches`);
 }
+
+// League-wide outcome split. The calibration harness pits twenty near-identical AI drafts
+// against each other, which inflates draws; a real competition has a graded field.
+const outcomes = Object.entries(state.results).filter(([id]) => {
+  const f = state.fixtures.find((x) => x.id === id)!;
+  return !f.neutralVenue && !f.knockout;
+});
+const hw = outcomes.filter(([, r]) => r.homeScore > r.awayScore).length;
+const dr = outcomes.filter(([, r]) => r.homeScore === r.awayScore).length;
+const aw = outcomes.length - hw - dr;
+const p = (n: number) => ((n / outcomes.length) * 100).toFixed(1) + '%';
+console.log(`outcomes over ${outcomes.length} matches: home ${p(hw)} draw ${p(dr)} away ${p(aw)}`);

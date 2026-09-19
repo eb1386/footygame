@@ -191,17 +191,17 @@ function addToCompetition(squad, competitionId, competitionName) {
  * squad numbers null, and a shirt number is what lets us tell a right-back from a centre-back
  * or a winger from a central midfielder.
  */
-function wikipediaShirtIndex() {
+function wikipediaClubIndex() {
   const raw = readRaw('clubs.json');
   const index = new Map();
   if (!raw) return index;
   for (const squad of raw.current || []) {
     for (const p of squad.players) {
-      if (p.shirt == null) continue;
+      const entry = { shirt: p.shirt ?? null, position: p.position, wikiTitle: p.wikiTitle || null };
       const key = slug(p.name);
-      if (!index.has(key)) index.set(key, { shirt: p.shirt, position: p.position });
+      if (!index.has(key)) index.set(key, entry);
       const surname = slug(p.name.split(' ').slice(-1)[0]);
-      if (surname.length > 3 && !index.has('s:' + surname)) index.set('s:' + surname, { shirt: p.shirt, position: p.position });
+      if (surname.length > 3 && !index.has('s:' + surname)) index.set('s:' + surname, entry);
     }
   }
   return index;
@@ -214,11 +214,11 @@ function ingestFpl() {
     log('  (no fpl.json, skipping Premier League performance data)');
     return new Map();
   }
-  const shirts = wikipediaShirtIndex();
-  const shirtFor = (p) =>
-    shirts.get(slug(p.knownName || p.name)) ||
-    shirts.get(slug(p.webName)) ||
-    shirts.get('s:' + slug(p.lastName.split(' ').slice(-1)[0])) ||
+  const wiki = wikipediaClubIndex();
+  const wikiFor = (p) =>
+    wiki.get(slug(p.knownName || p.name)) ||
+    wiki.get(slug(p.webName)) ||
+    wiki.get('s:' + slug(p.lastName.split(' ').slice(-1)[0])) ||
     null;
   const byClub = new Map();
   for (const p of raw.players) {
@@ -257,17 +257,23 @@ function ingestFpl() {
       competitionName: 'Premier League',
       source: 'Fantasy Premier League API',
       baseStrength: prior,
-      rawPlayers: list.map((p) => ({
+      rawPlayers: list.map((p) => {
+        // Matching the FPL feed to the club's Wikipedia squad gives us both a shirt number
+        // and an article title. Without the title these players would carry no stature signal
+        // at all, and every Premier League club would rate far below its European peers.
+        const match = wikiFor(p);
+        return {
         name: p.knownName || p.name,
-        wikiTitle: null,
-        shirt: p.shirt ?? shirtFor(p)?.shirt ?? null,
+        wikiTitle: match?.wikiTitle ?? null,
+        shirt: p.shirt ?? match?.shirt ?? null,
         position: p.position,
         birthDate: p.birthDate,
         nationality: p.nationality,
         performance: perf(p),
         valuation: (p.price - minPrice) / Math.max(1, maxPrice - minPrice),
         starter: p.starts >= 3,
-      })),
+        };
+      }),
     });
     squadByClubName.set(meta.name, squad);
   }

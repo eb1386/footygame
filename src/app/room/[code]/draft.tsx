@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { getFormation } from '@/lib/ui/formations.client';
 import type { RoomView } from '@/lib/server/rooms';
 import { Pitch, shortName } from './page';
+import { Crest, ratingBand } from '@/app/crest';
 
 const STYLES = [
   { id: 'balanced', name: 'BALANCED' },
@@ -50,6 +51,17 @@ export function DraftScreen({
 
   const pending = draft.offer?.players.find((p) => p.playerId === pendingPlayer) ?? null;
 
+  // The server orders each player's eligible slots best-fit first, so the head of that list
+  // is where they would go. Group the offer by that, keeper first and attackers last, so the
+  // list reads like a team sheet instead of an arbitrary squad dump.
+  const slotOrder = new Map(formation.slots.map((slot, i) => [slot.id, i]));
+  const slotPosition = new Map(formation.slots.map((slot) => [slot.id, slot.position]));
+  const offerPlayers = [...(draft.offer?.players ?? [])].sort((a, b) => {
+    const sa = slotOrder.get(a.eligibleSlotIds[0]) ?? 99;
+    const sb = slotOrder.get(b.eligibleSlotIds[0]) ?? 99;
+    return sa - sb || b.overall - a.overall;
+  });
+
   const run = async (body: Record<string, unknown>) => {
     setBusy(true);
     setError('');
@@ -62,10 +74,12 @@ export function DraftScreen({
     setBusy(false);
   };
 
+  // Tapping a player places them straight away, in the position that fits them best.
+  // Requiring a second tap on a small pitch slot was the wrong default: the common case is
+  // "put this player where he belongs", not "choose between three spots".
   const choose = (playerId: string, eligible: string[]) => {
-    if (eligible.length === 1) return run({ action: 'pick', playerId, slotId: eligible[0] });
-    // More than one slot works — let the player place them on the pitch.
-    setPendingPlayer((current) => (current === playerId ? null : playerId));
+    if (!eligible.length) return;
+    run({ action: 'pick', playerId, slotId: eligible[0] });
   };
 
   if (draft.complete) {
@@ -155,28 +169,28 @@ export function DraftScreen({
 
       {draft.offer ? (
         <>
-          <section className="block-ink" style={{ opacity: spinning ? 0.35 : 1, transition: 'opacity .2s' }}>
-            <div className="spread">
-              <div className="grow">
-                <div className="label label-ink">
-                  {draft.offer.kind === 'nation' ? 'National team' : 'Club'} · {draft.offer.season}
-                </div>
-                <div className="spin-name" style={{ fontSize: 'clamp(1.5rem,6vw,2.4rem)' }}>
-                  {draft.offer.squadName}
-                </div>
+          <section
+            className="squad-header"
+            style={{ opacity: spinning ? 0.25 : 1, transition: 'opacity .18s ease' }}
+          >
+            <Crest name={draft.offer.squadName} code={draft.offer.squadCode} size={52} />
+            <div className="grow">
+              <div className="label label-ink">
+                {draft.offer.kind === 'nation' ? 'National team' : 'Club'} · {draft.offer.season}
               </div>
-              <div className="center" style={{ flex: 'none' }}>
-                <div className="label label-ink">Squad</div>
-                <div className="big-number" style={{ fontSize: '2rem' }}>
-                  {draft.offer.strength}
-                </div>
+              <div className="name">{draft.offer.squadName}</div>
+            </div>
+            <div className="center" style={{ flex: 'none' }}>
+              <div className="label label-ink">Squad</div>
+              <div className="big-number" style={{ fontSize: '1.9rem' }}>
+                {draft.offer.strength}
               </div>
             </div>
           </section>
 
           {pending && (
             <div className="banner">
-              Pick a position for {shortName(pending.name)} — tap a highlighted slot
+              Where should {shortName(pending.name)} play? Tap a highlighted position.
             </div>
           )}
 
@@ -206,27 +220,46 @@ export function DraftScreen({
                 </button>
               </div>
               <div className="player-list scroll-y">
-                {draft.offer.players.map((p) => (
-                  <button
-                    key={p.playerId}
-                    className="player-card"
-                    data-legend={p.legendary}
-                    disabled={busy}
-                    onClick={() => choose(p.playerId, p.eligibleSlotIds)}
-                    style={pendingPlayer === p.playerId ? { outline: '3px solid #ffd12e' } : undefined}
-                  >
-                    <div className="pos-chip">{p.position}</div>
-                    <div className="grow">
-                      <div className="nm">{p.name}</div>
-                      <div className="meta">
-                        {p.shirt ? `#${p.shirt} · ` : ''}
-                        {p.nationality || draft.offer!.squadName}
-                        {p.secondary.length ? ` · ${p.secondary.join('/')}` : ''}
-                      </div>
+                {offerPlayers.map((p) => {
+                  const target = slotPosition.get(p.eligibleSlotIds[0]);
+                  const outOfPosition = target && target !== p.position;
+                  return (
+                    <div key={p.playerId} className="pick-row">
+                      <button
+                        className="player-card"
+                        data-legend={p.legendary}
+                        disabled={busy}
+                        onClick={() => choose(p.playerId, p.eligibleSlotIds)}
+                      >
+                        <div className="pos-chip" data-out={outOfPosition || undefined}>
+                          {target ?? p.position}
+                        </div>
+                        <div className="grow">
+                          <div className="nm">{p.name}</div>
+                          <div className="meta">
+                            {p.shirt ? `#${p.shirt} · ` : ''}
+                            {p.position}
+                            {outOfPosition ? ` → ${target}` : ''}
+                            {p.nationality ? ` · ${p.nationality}` : ''}
+                          </div>
+                        </div>
+                        <div className="ovr" data-band={ratingBand(p.overall)}>
+                          {p.overall}
+                        </div>
+                      </button>
+                      {p.eligibleSlotIds.length > 1 && (
+                        <button
+                          className="alt-slots"
+                          disabled={busy}
+                          title="Choose a different position"
+                          onClick={() => setPendingPlayer((c) => (c === p.playerId ? null : p.playerId))}
+                        >
+                          {pendingPlayer === p.playerId ? '×' : '⇄'}
+                        </button>
+                      )}
                     </div>
-                    <div className="ovr">{p.overall}</div>
-                  </button>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>

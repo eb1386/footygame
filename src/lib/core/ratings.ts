@@ -66,39 +66,43 @@ export function ageCurve(age: number | null | undefined): number {
 }
 
 export function computeRatings(signals: RatingSignals): Ratings {
-  const {
-    position,
-    squadStrength,
-    sitelinks,
-    shirt,
-    age,
-    caps,
-    intlGoals,
-    performance,
-    valuation,
-  } = signals;
+  const { position, squadStrength, sitelinks, shirt, age, caps, intlGoals, performance, valuation } = signals;
 
-  // 1. A player's floor is set by the company they keep.
-  const base = 44 + clamp(squadStrength, 30, 99) * 0.40;
+  // Each signal is normalised to 0-1 first, then blended. Summing raw bonuses instead —
+  // an earlier version of this — lets a player who happens to have several signals present
+  // stack them all and pin to 99, which is how a whole Premier League XI ended up in the
+  // high nineties. A weighted mean over whatever signals exist cannot do that.
+  const parts: { value: number; weight: number }[] = [];
+  const add = (value: number | null | undefined, weight: number) => {
+    if (value == null || Number.isNaN(value)) return;
+    parts.push({ value: clamp(value, 0, 1), weight });
+  };
 
-  // 2. Stature. 200+ language editions is Messi/Ronaldo territory; 10 is a squad player.
-  const stature = saturate(sitelinks ?? 0, 180) * 19;
+  // The company you keep: how strong was this squad.
+  add((clamp(squadStrength, 35, 99) - 35) / 64, 0.3);
+  // Stature: Wikipedia language editions. ~180 is the very top of the game.
+  add(sitelinks != null ? saturate(sitelinks, 180) : null, 0.36);
+  // Real season performance and market valuation, where the dataset carries them.
+  add(performance, 0.17);
+  add(valuation, 0.06);
+  // International record, for tournament squads.
+  const intl =
+    caps != null || intlGoals != null
+      ? 0.62 * saturate(caps ?? 0, 130) + 0.38 * saturate(position === 'GK' ? 0 : intlGoals ?? 0, 45)
+      : null;
+  add(intl, 0.11);
 
-  // 3. Real season performance, when the dataset has it.
-  const perf = performance != null ? (performance - 0.45) * 16 : 0;
-  const market = valuation != null ? (valuation - 0.4) * 11 : 0;
+  const totalWeight = parts.reduce((a, p) => a + p.weight, 0) || 1;
+  const score = parts.reduce((a, p) => a + p.value * p.weight, 0) / totalWeight;
 
-  // 4. International record.
-  const capBoost = saturate(caps ?? 0, 130) * 6;
-  const goalBoost = position === 'GK' ? 0 : saturate(intlGoals ?? 0, 45) * 3.5;
-
-  // 5. Role and age.
+  // Map the blended score onto the rating scale, then apply the two adjustments that are
+  // genuinely additive: whether this player starts, and where they are on the age curve.
   const starterKnown = signals.starter ?? (shirt != null && shirt >= 1 && shirt <= 11);
-  const roleBoost = starterKnown ? 2.4 : -1.4;
-  const ageAdj = ageCurve(age);
-
-  const raw = base + stature + perf + market + capBoost + goalBoost + roleBoost + ageAdj;
-  const overall = Math.round(clamp(raw, 40, 99));
+  // The scale is deliberately wide: a squad player lands in the fifties, a first-team
+  // regular in the low seventies, and only the genuinely historic reach the mid nineties.
+  const overall = Math.round(
+    clamp(36 + score * 66 + (starterKnown ? 2.2 : -1.8) + ageCurve(age) * 0.8, 40, 99),
+  );
 
   const profile = POSITION_PROFILE[position];
   const attack = Math.round(clamp(overall * profile.attack + profile.attackOffset, 20, 99));

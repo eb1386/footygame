@@ -20,9 +20,10 @@ CREATE COMPETITION → SHARE CODE → EVERYONE DRAFTS → SEASON RUNS → CHAMPI
 
 1. **Create** — pick Premier League, La Liga, Champions League or World Cup. You get a room code.
 2. **Invite** — share the code or the link. Friends pick a name and an avatar, and they're in.
-3. **Draft** — your formation is rolled for you. A real squad spins up; you pick one player from
-   it; another squad spins. Eleven picks, five rerolls. Only players who can legally fill one of
-   your remaining positions are selectable, so a centre-back never ends up at striker.
+3. **Draft** — your formation is rolled for you. A real club from your competition spins up; you
+   pick one player from it; another club spins. Eleven picks, five rerolls. One tap places a
+   player in the position that suits him best, and only players who can legally fill one of your
+   remaining slots are offered, so a centre-back never ends up at striker.
 4. **Play** — the host starts the competition. The full season is generated server-side and plays
    back matchday by matchday: your fixture front and centre, the other scores landing around it,
    the table reshuffling underneath. A 38-matchday season takes about two minutes.
@@ -55,7 +56,8 @@ the gameplay code, so it can be replaced or extended without touching a line of 
 | [Wikidata](https://www.wikidata.org) | CC0 1.0 | Birth dates, nationality, playing position, and the article count used as a stature signal |
 
 **Current contents:** 918 squads, 21,322 player-seasons, 184 teams, spanning every World Cup from
-1930 to 2026.
+1930 to 2026, every European Championship from 1960, and the current Premier League, La Liga and
+Champions League fields.
 
 ### A note on the inspiration's dataset
 
@@ -111,20 +113,27 @@ hard-coded to a result.
 
 ### Calibrated against real football
 
-`npm run test:sim` runs thousands of matches and reports the distributions. Current output:
+`npm run test:sim` runs thousands of matches and reports the distributions, and
+`node --import ./tests/resolver.mjs tests/season-check.ts premier-league` prints a whole
+generated season. Current output:
 
 ```
-goals per match      2.80   (real: ~2.70)
-home wins            41.3%  (real: ~44%)
-draws                29.3%  (real: ~25%)
-away wins            29.3%  (real: ~31%)
-shots per match      21.2   (real: ~24)
-on target per match  8.5    (real: ~8.4)
-yellows per match    4.0    (real: ~3.7)
-reds per match       0.15   (real: ~0.12)
+                       engine    real
+goals per match         2.79    ~2.70
+home wins              43.7%     ~44%
+draws                  28.4%     ~25%
+away wins              27.8%     ~31%
+shots per match         22.7      ~24
+shots on target          8.9     ~8.4
+yellows per match        3.9     ~3.7
+reds per match          0.15    ~0.12
+
+A generated Premier League season:
+  2.63 goals per match, champion on 95 points
+  home 44.5%  draw 25.8%  away 29.7%
 
 Top five squads v bottom five, 2000 matches:
-  strong wins 50.6%   draws 25.1%   upsets 24.3%
+  strong wins 53.3%   draws 23.8%   upsets 22.9%
 ```
 
 Better squads win about twice as often as they lose. Upsets stay genuinely possible.

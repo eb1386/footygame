@@ -147,28 +147,30 @@ export function competitionSquads(mode: CompetitionMode): Squad[] {
 }
 
 /**
- * The draft pool. Wider than the competition field on purpose — drafting is more fun when
- * legendary historical squads can spin up alongside the current season's clubs.
+ * The squads the draft spins through.
+ *
+ * By default this is exactly the competition you are playing: a Premier League room spins
+ * Premier League clubs, a World Cup room spins the nations at that World Cup. That is the
+ * whole point of picking a competition, and mixing in unrelated clubs just makes the roll
+ * feel arbitrary.
+ *
+ * `includeHistory` opens it up to past squads for rooms that want the full archive — a 1970
+ * Brazil turning up alongside 2026 France.
  */
-export function draftPool(mode: CompetitionMode, includeHistory = true): Squad[] {
+export function draftPool(mode: CompetitionMode, includeHistory = false): Squad[] {
   const ds = dataset();
-  const base = competitionSquads(mode);
+  const base = competitionSquads(mode).filter((s) => s.playerIds.length >= 14);
   if (!includeHistory) return base;
 
   if (mode === 'world-cup') {
-    // Every World Cup squad ever recorded, so a 1970 Brazil can appear next to 2026 France.
     const all = ds.squadsByCompetition.get('world-cup') ?? [];
     const euros = ds.squadsByCompetition.get('euros') ?? [];
     const copa = ds.squadsByCompetition.get('copa-america') ?? [];
     return [...all, ...euros, ...copa].filter((s) => s.playerIds.length >= 14);
   }
-  // Club competitions draft from the clubs in that competition plus the wider club pool.
-  const clubs = ds.squadsByCompetition.get('clubs') ?? [];
   const history = ds.squadsByCompetition.get('club-history') ?? [];
   const seen = new Set(base.map((s) => s.id));
-  return [...base, ...[...clubs, ...history].filter((s) => !seen.has(s.id))].filter(
-    (s) => s.playerIds.length >= 14,
-  );
+  return [...base, ...history.filter((s) => !seen.has(s.id))].filter((s) => s.playerIds.length >= 14);
 }
 
 // ---------------------------------------------------------------------------

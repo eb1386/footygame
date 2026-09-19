@@ -33,7 +33,7 @@ export function defaultSettings(mode: CompetitionMode): RoomSettings {
     aiDifficulty: 'normal',
     simulationSpeed: 'fast',
     homeAdvantage: 1,
-    includeHistoricalSquads: true,
+    includeHistoricalSquads: false,
     isPrivate: true,
     seed: randomSeedString(12),
   };
@@ -254,6 +254,13 @@ function generateCompetition(room: Room): CompetitionState {
   const entries: CompetitionEntry[] = [];
   const d = deps();
 
+  // Rank the field by real club strength so AI difficulty can track it.
+  const strengthRank = new Map(
+    [...field]
+      .sort((a, b) => b.strength - a.strength)
+      .map((squad, i) => [squad.id, i / Math.max(1, field.length - 1)]),
+  );
+
   shuffledField.forEach((squad, index) => {
     const member = room.members[index] ?? null;
     if (member && member.draft) {
@@ -281,7 +288,7 @@ function generateCompetition(room: Room): CompetitionState {
           allowDuplicateSquads: room.settings.allowDuplicateSquads,
         },
         d,
-        room.settings.aiDifficulty,
+        aiDifficultyFor(room.settings.aiDifficulty, strengthRank.get(squad.id) ?? 0.5),
       );
       const selection = toSelection(aiDraft, aiDraft.style);
       entries.push({
@@ -307,6 +314,19 @@ function generateCompetition(room: Room): CompetitionState {
     playersById: d.playersById,
     homeAdvantage: room.settings.homeAdvantage,
   });
+}
+
+/**
+ * Scale an AI club's drafting ability by where it sits in the competition.
+ * The room's setting is the baseline; the top of the field drafts a notch above it and the
+ * bottom a notch below, so the table spreads out the way a real league does.
+ */
+function aiDifficultyFor(base: RoomSettings['aiDifficulty'], rank: number): 'casual' | 'normal' | 'ruthless' {
+  const order: ('casual' | 'normal' | 'ruthless')[] = ['casual', 'normal', 'ruthless'];
+  const baseIndex = order.indexOf(base);
+  // rank 0 is the strongest club in the field, 1 the weakest.
+  const shift = rank < 0.3 ? 1 : rank > 0.7 ? -1 : 0;
+  return order[Math.max(0, Math.min(order.length - 1, baseIndex + shift))];
 }
 
 function squadStrengthOfSelection(

@@ -118,6 +118,16 @@ export async function fetchWikidataByTitles(titles) {
   return r.json.entities || null;
 }
 
+/** Resolve Wikidata Q-ids to English labels (max 50 per call). */
+export async function fetchWikidataLabels(ids) {
+  const url =
+    'https://www.wikidata.org/w/api.php?action=wbgetentities&format=json&formatversion=2&languages=en&props=labels&ids=' +
+    ids.join('|');
+  const r = await throttled(url);
+  if (!r.ok || !r.json || r.json.error) return null;
+  return r.json.entities || null;
+}
+
 // ---------------------------------------------------------------------------
 // Wikitext parsing
 // ---------------------------------------------------------------------------
@@ -220,6 +230,8 @@ export function cleanText(raw) {
   s = s.replace(/'''?/g, '');
   s = s.replace(/<[^>]+>/g, '');
   s = s.replace(/&nbsp;/g, ' ');
+  // Squad lists append captain markers to the name itself: "Ferenc Puskás (c)".
+  s = s.replace(/\s*\((?:c|vc|captain|vice-captain)\)\s*$/i, '');
   return s.replace(/\s+/g, ' ').trim();
 }
 

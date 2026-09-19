@@ -5,6 +5,7 @@ import { buildTable } from '@/lib/core/schedule';
 import type { CompetitionEntry, CompetitionState, StoredResult } from '@/lib/core/competition';
 import type { RoomView } from '@/lib/server/rooms';
 import type { Fixture, StandingRow } from '@/lib/core/types';
+import { Crest } from '@/app/crest';
 
 /** How long one matchday takes to reveal, in milliseconds. */
 const SPEEDS: Record<string, { normal: number; feature: number }> = {
@@ -205,20 +206,23 @@ export function SeasonScreen({
                   <button
                     key={f.id}
                     className="result-row"
-                    style={{ width: '100%', background: 'none', border: 'none', borderBottom: '2px solid rgba(0,0,0,.12)', cursor: 'pointer' }}
                     data-mine={!!(home.ownerId || away.ownerId)}
                     onClick={() => setOpenMatch(f.id)}
                   >
-                    <span style={{ textAlign: 'left' }}>
-                      {home.ownerId ? `${home.avatar} ` : ''}
-                      {home.teamName}
+                    <span className="side">
+                      <Crest name={home.teamName} code={home.teamCode} size={22} colors={home.colors} />
+                      <span className="t">
+                        {home.ownerId ? `${home.avatar} ` : ''}
+                        {home.teamName}
+                      </span>
                     </span>
-                    <span className="sc">
-                      {r ? `${partial.home}-${partial.away}` : '–'}
-                    </span>
-                    <span className="away">
-                      {away.teamName}
-                      {away.ownerId ? ` ${away.avatar}` : ''}
+                    <span className="sc">{r ? `${partial.home}-${partial.away}` : '–'}</span>
+                    <span className="side away">
+                      <span className="t">
+                        {away.teamName}
+                        {away.ownerId ? ` ${away.avatar}` : ''}
+                      </span>
+                      <Crest name={away.teamName} code={away.teamCode} size={22} colors={away.colors} />
                     </span>
                   </button>
                 );
@@ -309,24 +313,26 @@ function FeaturedMatch({
         <div className="label label-ink">
           {home.ownerId ? 'You' : 'AI'} v {away.ownerName ?? 'AI'} · {fixture.label}
         </div>
-        <div className="clock" style={{ color: live ? '#00e06a' : 'inherit' }}>
+        <div className="clock" data-live={live}>
           {live ? `${minute}'` : 'FT'}
         </div>
       </div>
 
       <div className="scoreline">
         <div>
-          <div className="team-name" style={{ fontSize: 'clamp(1rem,4vw,1.5rem)' }}>
+          <Crest name={home.teamName} code={home.teamCode} size={34} colors={home.colors} />
+          <div className="team-name" style={{ fontSize: 'clamp(0.95rem,3.8vw,1.4rem)', marginTop: 6 }}>
             {home.ownerId ? `${home.avatar} ` : ''}
             {home.teamName}
           </div>
           <div className="label label-ink">{home.ownerName ?? 'AI'}</div>
         </div>
-        <div className="score mono">
+        <div className="score">
           {score.home}–{score.away}
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div className="team-name" style={{ fontSize: 'clamp(1rem,4vw,1.5rem)' }}>
+          <Crest name={away.teamName} code={away.teamCode} size={34} colors={away.colors} />
+          <div className="team-name" style={{ fontSize: 'clamp(0.95rem,3.8vw,1.4rem)', marginTop: 6 }}>
             {away.teamName}
             {away.ownerId ? ` ${away.avatar}` : ''}
           </div>
@@ -413,14 +419,20 @@ function Bracket({
               const mine = home.id === myEntryId || away.id === myEntryId;
               return (
                 <div key={first.tieId ?? first.id} className="result-row" data-mine={mine}>
-                  <span style={{ textAlign: 'left' }}>
-                    {home.ownerId ? `${home.avatar} ` : ''}
-                    {home.teamName}
+                  <span className="side">
+                    <Crest name={home.teamName} code={home.teamCode} size={22} colors={home.colors} />
+                    <span className="t">
+                      {home.ownerId ? `${home.avatar} ` : ''}
+                      {home.teamName}
+                    </span>
                   </span>
                   <span className="sc">{played ? `${aggHome}-${aggAway}` : '–'}</span>
-                  <span className="away">
-                    {away.teamName}
-                    {away.ownerId ? ` ${away.avatar}` : ''}
+                  <span className="side away">
+                    <span className="t">
+                      {away.teamName}
+                      {away.ownerId ? ` ${away.avatar}` : ''}
+                    </span>
+                    <Crest name={away.teamName} code={away.teamCode} size={22} colors={away.colors} />
                   </span>
                 </div>
               );
@@ -463,8 +475,13 @@ function LeagueTable({
             <tr key={row.entryId} data-you={row.entryId === myEntryId} data-human={!!entry.ownerId}>
               <td className="pos-cell">{row.position}</td>
               <td>
-                {entry.ownerId ? `${entry.avatar} ` : ''}
-                {entry.teamName}
+                <span className="team-cell">
+                  <Crest name={entry.teamName} code={entry.teamCode} size={20} colors={entry.colors} />
+                  <span className="t">
+                    {entry.ownerId ? `${entry.avatar} ` : ''}
+                    {entry.teamName}
+                  </span>
+                </span>
               </td>
               <td>{row.played}</td>
               <td className="hide-sm">{row.won}</td>
@@ -542,23 +559,8 @@ function MatchModal({ code, fixtureId, onClose }: { code: string; fixtureId: str
   const awayScore = last?.awayScore ?? 0;
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0,0,0,.65)',
-        zIndex: 50,
-        display: 'grid',
-        placeItems: 'end center',
-        padding: '12px',
-      }}
-      onClick={onClose}
-    >
-      <div
-        className="block"
-        style={{ width: '100%', maxWidth: 620, maxHeight: '92vh', overflowY: 'auto' }}
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
         {!data ? (
           <div className="label">Loading match…</div>
         ) : (
@@ -571,19 +573,27 @@ function MatchModal({ code, fixtureId, onClose }: { code: string; fixtureId: str
             </div>
 
             <div className="scoreline">
-              <div className="team-name" style={{ fontSize: 'clamp(.95rem,3.6vw,1.3rem)' }}>
-                {data.home.name}
+              <div className="row">
+                <Crest name={data.home.name} code={data.home.code} size={28} />
+                <span className="team-name" style={{ fontSize: 'clamp(.9rem,3.4vw,1.2rem)' }}>
+                  {data.home.name}
+                </span>
               </div>
-              <div className="score mono">
+              <div className="score">
                 {homeScore}–{awayScore}
               </div>
-              <div className="team-name" style={{ fontSize: 'clamp(.95rem,3.6vw,1.3rem)', textAlign: 'right' }}>
-                {data.away.name}
+              <div className="row" style={{ justifyContent: 'flex-end' }}>
+                <span className="team-name" style={{ fontSize: 'clamp(.9rem,3.4vw,1.2rem)' }}>
+                  {data.away.name}
+                </span>
+                <Crest name={data.away.name} code={data.away.code} size={28} />
               </div>
             </div>
 
             <div className="spread">
-              <div className="clock">{minute >= data.result.duration ? 'FULL TIME' : `${minute}'`}</div>
+              <div className="clock" data-live={minute < data.result.duration}>
+                {minute >= data.result.duration ? 'FULL TIME' : `${minute}'`}
+              </div>
               <div className="row">
                 <button className="btn btn-sm" onClick={() => setPlaying((p) => !p)}>
                   {playing ? 'Pause' : 'Play'}

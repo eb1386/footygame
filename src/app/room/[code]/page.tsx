@@ -6,6 +6,7 @@ import { getFormation } from '@/lib/ui/formations.client';
 import { DraftScreen } from './draft';
 import { SeasonScreen } from './season';
 import type { RoomView } from '@/lib/server/rooms';
+import { ratingBand } from '@/app/crest';
 
 export default function RoomPage({ params }: { params: Promise<{ code: string }> }) {
   const { code } = use(params);
@@ -212,7 +213,7 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
           <div key={m.id} className="member-row">
             <div className="avatar">{m.avatar}</div>
             <div className="grow">
-              <div style={{ fontWeight: 900, textTransform: 'uppercase' }}>{m.name}</div>
+              <div className="nm">{m.name}</div>
               <div className="label">
                 {m.isHost ? 'Host' : 'Player'} · {m.online ? 'Online' : 'Away'}
               </div>
@@ -226,7 +227,7 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
               +
             </div>
             <div className="grow">
-              <div style={{ fontWeight: 900, textTransform: 'uppercase' }}>Waiting for friends</div>
+              <div className="nm">Waiting for friends</div>
               <div className="label">
                 Remaining teams are played by AI
               </div>
@@ -318,12 +319,12 @@ export function Pitch({
               {player ? (
                 <>
                   <div className="nm">{shortName(player.name)}</div>
-                  <div className="ovr">{player.overall}</div>
+                  <div className="ovr" data-band={ratingBand(player.overall)}>
+                    {player.overall}
+                  </div>
                 </>
               ) : (
-                <div className="nm" style={{ opacity: 0.85 }}>
-                  —
-                </div>
+                <div className="nm">—</div>
               )}
             </div>
           </div>

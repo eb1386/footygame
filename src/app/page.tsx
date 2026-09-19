@@ -87,16 +87,16 @@ export default function Home() {
             <div className="hero-title">
               DRAFT
               <br />
-              YOUR XI.
+              YOUR <em>XI.</em>
               <br />
               BEAT YOUR
               <br />
               FRIENDS.
             </div>
             <div className="block-ink">
-              <p className="promise" style={{ margin: 0 }}>
+              <p className="promise">
                 Create a competition. Share the code. Everyone drafts a starting XI from real
-                squads. Play the whole season, matchday by matchday.
+                squads, then the whole season plays out matchday by matchday.
               </p>
             </div>
           </section>
@@ -122,9 +122,7 @@ export default function Home() {
                 >
                   <div className="avatar">{r.phase === 'complete' ? '🏆' : '⚽'}</div>
                   <div className="grow">
-                    <div style={{ fontWeight: 900, textTransform: 'uppercase' }}>
-                      {r.mode.replace(/-/g, ' ')}
-                    </div>
+                    <div className="nm">{r.mode.replace(/-/g, ' ')}</div>
                     <div className="label">
                       {r.code} · {r.players} {r.players === 1 ? 'player' : 'players'} ·{' '}
                       {r.champion ? `Won by ${r.champion}` : r.phase}
@@ -164,11 +162,13 @@ export default function Home() {
                   onClick={() => setMode(c.mode)}
                 >
                   <div className="bar" style={{ background: c.accent }} />
-                  <h3>{c.name}</h3>
-                  <div className="label" style={{ color: 'inherit', opacity: 0.7 }}>
-                    {c.teamCount} teams · {c.seasonLabel}
+                  <div className="body">
+                    <h3>{c.name}</h3>
+                    <div className="label">
+                      {c.teamCount} teams · {c.seasonLabel}
+                    </div>
+                    <div className="tag">{c.tagline}</div>
                   </div>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{c.tagline}</div>
                 </button>
               ))}
             </div>
