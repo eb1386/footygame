@@ -139,7 +139,13 @@ const POSITION_PROFILE: Record<Position, { attack: number; defence: number; atta
 };
 
 /**
- * Turn a coarse GK/DF/MF/FW plus a shirt number into a specific position.
+ * Turn a coarse GK/DF/MF/FW plus a shirt number into a specific position, plus the other
+ * positions that player can cover.
+ *
+ * Every outfielder gets two secondary positions, so each card is playable in three places
+ * and a draft never stalls because the one slot left is one nobody can fill. Goalkeepers get
+ * none: a keeper keeps goal, and nobody else does.
+ *
  * Shirt numbers are a genuinely strong signal in football: 1 keeps goal, 2 and 3 are
  * full-backs, 4/5/6 sit centrally, 7 and 11 are wide, 9 leads the line, 10 plays behind.
  */
@@ -148,52 +154,78 @@ export function refinePosition(coarse: CoarsePosition | null, shirt: number | nu
   secondary: Position[];
 } {
   const h = (hint || '').toUpperCase();
-  const direct = DETAILED_HINTS[h];
-  if (direct) return direct;
+  const fromHint = DETAILED_HINTS[h];
+  if (fromHint) return { position: fromHint, secondary: SECONDARY[fromHint] };
 
-  switch (coarse) {
-    case 'GK':
-      return { position: 'GK', secondary: [] };
-    case 'DF':
-      if (shirt === 2) return { position: 'RB', secondary: ['CB'] };
-      if (shirt === 3) return { position: 'LB', secondary: ['CB'] };
-      if (shirt === 12 || shirt === 22) return { position: 'LB', secondary: ['RB'] };
-      if (shirt === 24 || shirt === 20) return { position: 'RB', secondary: ['CB'] };
-      return { position: 'CB', secondary: shirt === 6 ? ['DM'] : [] };
-    case 'MF':
-      if (shirt === 4 || shirt === 6) return { position: 'DM', secondary: ['CM', 'CB'] };
-      if (shirt === 10) return { position: 'AM', secondary: ['CM'] };
-      if (shirt === 7) return { position: 'RM', secondary: ['RW', 'CM'] };
-      if (shirt === 11) return { position: 'LM', secondary: ['LW', 'CM'] };
-      return { position: 'CM', secondary: ['DM', 'AM'] };
-    case 'FW':
-      if (shirt === 7) return { position: 'RW', secondary: ['ST', 'RM'] };
-      if (shirt === 11) return { position: 'LW', secondary: ['ST', 'LM'] };
-      if (shirt === 10) return { position: 'ST', secondary: ['AM'] };
-      return { position: 'ST', secondary: ['AM'] };
-    default:
-      return { position: 'CM', secondary: [] };
-  }
+  const position = ((): Position => {
+    switch (coarse) {
+      case 'GK':
+        return 'GK';
+      case 'DF':
+        if (shirt === 2) return 'RB';
+        if (shirt === 3) return 'LB';
+        if (shirt === 12 || shirt === 22 || shirt === 33) return 'LB';
+        if (shirt === 20 || shirt === 24) return 'RB';
+        return 'CB';
+      case 'MF':
+        if (shirt === 4 || shirt === 6) return 'DM';
+        if (shirt === 10) return 'AM';
+        if (shirt === 7) return 'RM';
+        if (shirt === 11) return 'LM';
+        return 'CM';
+      case 'FW':
+        if (shirt === 7) return 'RW';
+        if (shirt === 11) return 'LW';
+        return 'ST';
+      default:
+        return 'CM';
+    }
+  })();
+
+  return { position, secondary: SECONDARY[position] };
 }
 
-const DETAILED_HINTS: Record<string, { position: Position; secondary: Position[] }> = {
-  GK: { position: 'GK', secondary: [] },
-  CB: { position: 'CB', secondary: ['DM'] },
-  RB: { position: 'RB', secondary: ['CB', 'RM'] },
-  LB: { position: 'LB', secondary: ['CB', 'LM'] },
-  RWB: { position: 'RB', secondary: ['RM'] },
-  LWB: { position: 'LB', secondary: ['LM'] },
-  DM: { position: 'DM', secondary: ['CM', 'CB'] },
-  CDM: { position: 'DM', secondary: ['CM', 'CB'] },
-  CM: { position: 'CM', secondary: ['DM', 'AM'] },
-  AM: { position: 'AM', secondary: ['CM'] },
-  CAM: { position: 'AM', secondary: ['CM'] },
-  RM: { position: 'RM', secondary: ['RW'] },
-  LM: { position: 'LM', secondary: ['LW'] },
-  RW: { position: 'RW', secondary: ['RM', 'ST'] },
-  LW: { position: 'LW', secondary: ['LM', 'ST'] },
-  ST: { position: 'ST', secondary: ['AM'] },
-  CF: { position: 'ST', secondary: ['AM'] },
+/**
+ * The two positions each role can also cover. These are the moves a manager actually makes:
+ * a full-back tucking inside, a holding midfielder dropping into defence, a winger going up
+ * front. Nothing here turns a centre-back into a striker.
+ */
+const SECONDARY: Record<Position, Position[]> = {
+  GK: [],
+  CB: ['DM', 'RB'],
+  RB: ['CB', 'RM'],
+  LB: ['CB', 'LM'],
+  DM: ['CM', 'CB'],
+  CM: ['DM', 'AM'],
+  AM: ['CM', 'LW'],
+  RM: ['RW', 'CM'],
+  LM: ['LW', 'CM'],
+  RW: ['RM', 'ST'],
+  LW: ['LM', 'ST'],
+  ST: ['AM', 'RW'],
+};
+
+const DETAILED_HINTS: Record<string, Position> = {
+  GK: 'GK',
+  CB: 'CB',
+  RB: 'RB',
+  LB: 'LB',
+  RWB: 'RB',
+  LWB: 'LB',
+  DM: 'DM',
+  CDM: 'DM',
+  CM: 'CM',
+  AM: 'AM',
+  CAM: 'AM',
+  RM: 'RM',
+  LM: 'LM',
+  RW: 'RW',
+  LW: 'LW',
+  ST: 'ST',
+  CF: 'ST',
+  FW: 'ST',
+  DF: 'CB',
+  MF: 'CM',
 };
 
 /** Derive a squad's overall strength from its rated players. */

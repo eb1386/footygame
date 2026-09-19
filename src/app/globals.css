@@ -660,3 +660,16 @@ input[type='range'] { width: 100%; accent-color: var(--ink); }
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.85);
 }
+
+/* Pitch first, list second. On a phone the formation sat under twenty-odd player rows,
+   so you never actually saw the shape you were filling in. */
+.draft-body { display: grid; gap: 14px; grid-template-columns: 1fr; }
+@media (min-width: 860px) {
+  .draft-body { grid-template-columns: minmax(280px, 0.95fr) 1fr; align-items: start; }
+  .draft-body .player-list { max-height: 78vh; overflow-y: auto; padding-right: 2px; }
+}
+/* Keep the pitch short enough on a phone that the first players are visible under it. */
+@media (max-width: 859px) {
+  .draft-body .pitch { aspect-ratio: 4 / 3.4; }
+  .draft-body .pitch .slot { width: 19%; min-width: 50px; }
+}

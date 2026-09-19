@@ -134,36 +134,37 @@ export function DraftScreen({
             </div>
           </div>
 
-          <div className="player-list">
-            {players.map((p) => {
-              const target = slotPosition.get(p.eligibleSlotIds[0]);
-              return (
-                <button
-                  key={p.playerId}
-                  className="player-card"
-                  data-legend={p.legendary}
-                  disabled={busy}
-                  onClick={() => run({ action: 'pick', playerId: p.playerId, slotId: p.eligibleSlotIds[0] })}
-                >
-                  <div className="pos-chip" data-out={target !== p.position || undefined}>
-                    {target ?? p.position}
-                  </div>
-                  <div className="grow">
-                    <div className="nm">{p.name}</div>
-                    <div className="meta">
-                      {p.position}
-                      {p.nationality ? ` · ${p.nationality}` : ''}
-                    </div>
-                  </div>
-                  <div className="ovr" data-band={ratingBand(p.overall)}>
-                    {p.overall}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+          <div className="draft-body">
+            <Pitch formationId={draft.formationId} picks={pitchPicks} />
 
-          <Pitch formationId={draft.formationId} picks={pitchPicks} />
+            <div className="player-list">
+              {players.map((p) => {
+                const target = slotPosition.get(p.eligibleSlotIds[0]);
+                return (
+                  <button
+                    key={p.playerId}
+                    className="player-card"
+                    data-legend={p.legendary}
+                    disabled={busy}
+                    onClick={() => run({ action: 'pick', playerId: p.playerId, slotId: p.eligibleSlotIds[0] })}
+                  >
+                    <div className="pos-chip" data-out={target !== p.position || undefined}>
+                      {target ?? p.position}
+                    </div>
+                    <div className="grow">
+                      <div className="nm">{p.name}</div>
+                      <div className="meta">
+                        {[p.position, ...p.secondary].join(' / ')}
+                      </div>
+                    </div>
+                    <div className="ovr" data-band={ratingBand(p.overall)}>
+                      {p.overall}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </>
       ) : (
         <div className="banner">Finishing up…</div>
