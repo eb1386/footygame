@@ -1,0 +1,36 @@
+{
+  "name": "golazo-clash",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Draft a team. Invite your friends. Play a real competition.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import ./tests/resolver.mjs --test tests/core.test.ts",
+    "test:sim": "node --import ./tests/resolver.mjs tests/simulation-distribution.ts",
+    "ingest:fpl": "node scripts/ingest/fetch-fpl.mjs",
+    "ingest:tournaments": "node scripts/ingest/fetch-tournaments.mjs",
+    "ingest:clubs": "node scripts/ingest/fetch-clubs.mjs",
+    "ingest:enrich": "node scripts/ingest/enrich-wikidata.mjs",
+    "ingest:build": "node scripts/ingest/build-dataset.mjs",
+    "ingest:all": "npm run ingest:fpl && npm run ingest:tournaments && npm run ingest:clubs && npm run ingest:enrich && npm run ingest:build"
+  },
+  "dependencies": {
+    "next": "^16.3.5",
+    "postgres": "3.4.5",
+    "react": "19.1.1",
+    "react-dom": "19.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.2",
+    "@types/react": "19.0.2",
+    "@types/react-dom": "19.0.2",
+    "typescript": "5.7.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
