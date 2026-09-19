@@ -1,7 +1,7 @@
 /** Guest identity. A signed-in account is optional; a device cookie is enough to play. */
 import { cookies } from 'next/headers';
 
-const COOKIE = 'golazo_device';
+const COOKIE = 'nip_device';
 
 export async function deviceId(): Promise<string> {
   const jar = await cookies();
@@ -19,7 +19,7 @@ export function newDeviceId(): string {
 /** Read the device id from a request, minting one when the browser has never been here. */
 export function deviceIdFrom(req: Request): { id: string; isNew: boolean } {
   const cookie = req.headers.get('cookie') || '';
-  const match = cookie.match(/golazo_device=([a-f0-9]{16,64})/);
+  const match = cookie.match(/nip_device=([a-f0-9]{16,64})/);
   if (match) return { id: match[1], isNew: false };
   return { id: newDeviceId(), isNew: true };
 }

@@ -18,7 +18,7 @@ const POSITIONS = { 1: 'GK', 2: 'DF', 3: 'MF', 4: 'FW' };
 
 async function main() {
   log('Fetching Fantasy Premier League bootstrap-static...');
-  const res = await fetch(ENDPOINT, { headers: { 'User-Agent': 'GolazoClash-DataPipeline/1.0' } });
+  const res = await fetch(ENDPOINT, { headers: { 'User-Agent': 'ElNipGame-DataPipeline/1.0' } });
   if (!res.ok) throw new Error('FPL API returned ' + res.status);
   const data = await res.json();
 

@@ -3,7 +3,7 @@ import './globals.css';
 import { Nav } from './nav';
 
 export const metadata: Metadata = {
-  title: 'GOLAZO CLASH — Draft a team. Beat your friends.',
+  title: 'EL NIP GAME — Draft a team. Beat your friends.',
   description:
     'Create a private competition, invite up to 16 friends, draft your starting XI from real squads, and play a full season with minute-by-minute simulation.',
 };

@@ -95,15 +95,15 @@ export interface HistoryEntry {
 // ---------------------------------------------------------------------------
 
 const g = globalThis as unknown as {
-  __golazoRooms?: Map<string, Room>;
-  __golazoHistory?: HistoryEntry[];
+  __nipRooms?: Map<string, Room>;
+  __nipHistory?: HistoryEntry[];
 };
 
 function memoryStore(): Store {
-  g.__golazoRooms ??= new Map();
-  g.__golazoHistory ??= [];
-  const rooms = g.__golazoRooms;
-  const history = g.__golazoHistory;
+  g.__nipRooms ??= new Map();
+  g.__nipHistory ??= [];
+  const rooms = g.__nipRooms;
+  const history = g.__nipHistory;
 
   return {
     kind: 'memory',

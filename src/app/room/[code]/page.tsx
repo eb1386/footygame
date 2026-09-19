@@ -37,8 +37,8 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
 
   // Initial load: fetch the room, and show the join form when this device has no seat.
   useEffect(() => {
-    setName(localStorage.getItem('golazo_name') || '');
-    setAvatar(localStorage.getItem('golazo_avatar') || AVATARS[0]);
+    setName(localStorage.getItem('nip_name') || '');
+    setAvatar(localStorage.getItem('nip_avatar') || AVATARS[0]);
     fetch(`/api/rooms/${roomCode}`)
       .then((r) => r.json())
       .then((d) => {
@@ -68,8 +68,8 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
     if (!name.trim()) return setError('Enter your name');
     setBusy(true);
     setError('');
-    localStorage.setItem('golazo_name', name);
-    localStorage.setItem('golazo_avatar', avatar);
+    localStorage.setItem('nip_name', name);
+    localStorage.setItem('nip_avatar', avatar);
     try {
       await act({ action: 'join', name, avatar });
       setNeedsJoin(false);

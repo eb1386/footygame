@@ -102,14 +102,23 @@ export function SeasonScreen({
   // Table up to and including the current matchday, but only counting the current match
   // once its clock has run out.
   const includeCurrent = clock >= 1;
+
+  // In a group stage the meaningful table is your own group, not all forty-eight nations.
+  const myGroup = useMemo(
+    () => (myEntry ? competition.groups.find((g) => g.entryIds.includes(myEntry.id)) ?? null : null),
+    [competition.groups, myEntry],
+  );
+  const groupScoped = stage === 'group' && myGroup;
+
   const table = useMemo(() => {
     const upTo = includeCurrent ? matchday : matchday - 1;
     const relevant = competition.fixtures.filter(
       (f) =>
         (f.stage === 'league' || f.stage === 'league-phase' || f.stage === 'group') &&
-        f.matchday <= upTo,
+        f.matchday <= upTo &&
+        (groupScoped ? f.groupId === myGroup!.id : true),
     );
-    const ids = competition.entries.map((e) => e.id);
+    const ids = groupScoped ? myGroup!.entryIds : competition.entries.map((e) => e.id);
     const results = relevant
       .map((f) => {
         const r = competition.results[f.id];
@@ -119,7 +128,7 @@ export function SeasonScreen({
       })
       .filter(Boolean) as { homeEntryId: string; awayEntryId: string; homeScore: number; awayScore: number }[];
     return buildTable(ids, results, { tiebreak: competition.tiebreak });
-  }, [competition, matchday, includeCurrent]);
+  }, [competition, matchday, includeCurrent, groupScoped, myGroup]);
 
   const champion = competition.championEntryId ? byId.get(competition.championEntryId) : null;
   const finished = matchday >= total && clock >= 1;
@@ -219,9 +228,15 @@ export function SeasonScreen({
         </section>
 
         <section className="stack">
-          <div className="label">{isLeagueStage ? 'Table' : 'Bracket standings'}</div>
+          <div className="label">
+            {stage === 'group' ? (myGroup ? groupName(competition, myGroup.id) : 'Group') : isLeagueStage ? 'Table' : 'Bracket'}
+          </div>
           <div className="block" style={{ padding: 8 }}>
-            <LeagueTable table={table} byId={byId} myEntryId={myEntry?.id ?? null} />
+            {isLeagueStage ? (
+              <LeagueTable table={table} byId={byId} myEntryId={myEntry?.id ?? null} />
+            ) : (
+              <Bracket competition={competition} byId={byId} upToMatchday={includeCurrent ? matchday : matchday - 1} myEntryId={myEntry?.id ?? null} />
+            )}
           </div>
         </section>
       </div>
@@ -337,6 +352,83 @@ function FeaturedMatch({
         Watch minute by minute
       </button>
     </section>
+  );
+}
+
+function groupName(competition: CompetitionState, groupId: string): string {
+  return competition.groups.find((g) => g.id === groupId)?.name ?? 'Group';
+}
+
+/** Every knockout round played so far, with aggregate scores for two-legged ties. */
+function Bracket({
+  competition,
+  byId,
+  upToMatchday,
+  myEntryId,
+}: {
+  competition: CompetitionState;
+  byId: Map<string, CompetitionEntry>;
+  upToMatchday: number;
+  myEntryId: string | null;
+}) {
+  const knockoutStages = competition.stages.filter(
+    (s) => s !== 'league' && s !== 'league-phase' && s !== 'group',
+  );
+
+  return (
+    <div className="stack">
+      {knockoutStages.map((stage) => {
+        const fixtures = competition.fixtures.filter((f) => f.stage === stage);
+        if (!fixtures.length) return null;
+        // Group the legs of each tie together.
+        const ties = new Map<string, typeof fixtures>();
+        for (const f of fixtures) {
+          const key = f.tieId ?? f.id;
+          if (!ties.has(key)) ties.set(key, []);
+          ties.get(key)!.push(f);
+        }
+        return (
+          <div key={stage} className="stack" style={{ gap: 4 }}>
+            <div className="label">{stage.replace(/-/g, ' ')}</div>
+            {[...ties.values()].map((legs) => {
+              const first = legs[0];
+              const home = byId.get(first.homeEntryId);
+              const away = byId.get(first.awayEntryId);
+              if (!home || !away) return null;
+              const revealed = legs.filter((l) => l.matchday <= upToMatchday);
+              let aggHome = 0;
+              let aggAway = 0;
+              for (const leg of revealed) {
+                const r = competition.results[leg.id];
+                if (!r) continue;
+                if (leg.homeEntryId === first.homeEntryId) {
+                  aggHome += r.homeScore;
+                  aggAway += r.awayScore;
+                } else {
+                  aggAway += r.homeScore;
+                  aggHome += r.awayScore;
+                }
+              }
+              const played = revealed.length > 0 && revealed.every((l) => competition.results[l.id]);
+              const mine = home.id === myEntryId || away.id === myEntryId;
+              return (
+                <div key={first.tieId ?? first.id} className="result-row" data-mine={mine}>
+                  <span style={{ textAlign: 'left' }}>
+                    {home.ownerId ? `${home.avatar} ` : ''}
+                    {home.teamName}
+                  </span>
+                  <span className="sc">{played ? `${aggHome}-${aggAway}` : '–'}</span>
+                  <span className="away">
+                    {away.teamName}
+                    {away.ownerId ? ` ${away.avatar}` : ''}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
+    </div>
   );
 }
 

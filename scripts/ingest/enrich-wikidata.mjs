@@ -54,7 +54,7 @@ async function labelsFor(ids) {
     const url =
       'https://www.wikidata.org/w/api.php?action=wbgetentities&format=json&formatversion=2&languages=en&props=labels&ids=' +
       chunk.join('|');
-    const res = await fetch(url, { headers: { 'User-Agent': 'GolazoClash-DataPipeline/1.0' } });
+    const res = await fetch(url, { headers: { 'User-Agent': 'ElNipGame-DataPipeline/1.0' } });
     if (!res.ok) continue;
     const json = await res.json();
     for (const [id, ent] of Object.entries(json.entities || {})) {

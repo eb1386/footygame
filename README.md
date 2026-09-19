@@ -1,4 +1,4 @@
-# FOOTY GAME
+# EL NIP GAME
 
 **Draft a team. Invite your friends. Play a real competition. Watch every match unfold.**
 

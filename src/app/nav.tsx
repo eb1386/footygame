@@ -16,7 +16,7 @@ export function Nav() {
     <header className="topbar">
       <Link className="wordmark" href="/">
         <span className="dot" />
-        GOLAZO CLASH
+        EL NIP GAME
       </Link>
       <nav className="nav">
         {LINKS.map((l) => (

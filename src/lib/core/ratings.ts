@@ -1,9 +1,9 @@
 /**
  * The rating model.
  *
- * Golazo's own rating methodology is not published, so this is an independent, transparent
- * model built from the signals our legitimately-sourced datasets actually carry. Everything
- * lives in this one module so it can be recalibrated without touching gameplay code.
+ * The inspiration's own rating methodology is not published, so this is an independent,
+ * transparent model built from the signals our legitimately-sourced datasets actually carry.
+ * Everything lives in this one module so it can be recalibrated without touching gameplay.
  *
  * Signals, in rough order of weight:
  *   1. Squad strength     — how good was the team that season (league/competition tier, era).

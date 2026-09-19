@@ -6,5 +6,6 @@ out
 *.tsbuildinfo
 next-env.d.ts
 .DS_Store
-data/raw/*.json
+# Scrape cache and intermediate raw payloads are rebuildable; only data/dist ships.
+data/raw/**
 !data/raw/.gitkeep

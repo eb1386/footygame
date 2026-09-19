@@ -3,7 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-export const UA = 'GolazoClash-DataPipeline/1.0 (open-source football draft game; contact: via repo issues)';
+export const UA = 'ElNipGame-DataPipeline/1.0 (open-source football draft game; contact: via repo issues)';
 export const RAW_DIR = path.join(process.cwd(), 'data', 'raw');
 export const DIST_DIR = path.join(process.cwd(), 'data', 'dist');
 

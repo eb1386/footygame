@@ -35,8 +35,8 @@ export default function Home() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    setName(localStorage.getItem('golazo_name') || '');
-    setAvatar(localStorage.getItem('golazo_avatar') || AVATARS[0]);
+    setName(localStorage.getItem('nip_name') || '');
+    setAvatar(localStorage.getItem('nip_avatar') || AVATARS[0]);
     fetch('/api/rooms')
       .then((r) => r.json())
       .then((d) => {
@@ -48,8 +48,8 @@ export default function Home() {
   }, []);
 
   const remember = () => {
-    localStorage.setItem('golazo_name', name);
-    localStorage.setItem('golazo_avatar', avatar);
+    localStorage.setItem('nip_name', name);
+    localStorage.setItem('nip_avatar', avatar);
   };
 
   const create = async () => {
