@@ -203,7 +203,7 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
           </div>
         </div>
         <button className="btn btn-warn" onClick={copyInvite}>
-          {copied ? 'Invite link copied' : 'Copy / share invite'}
+          {copied ? 'Link copied' : 'Share invite'}
         </button>
       </section>
 
@@ -228,32 +228,10 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
             </div>
             <div className="grow">
               <div className="nm">Waiting for friends</div>
-              <div className="label">
-                Remaining teams are played by AI
-              </div>
+              <div className="label">Empty teams are played by AI</div>
             </div>
           </div>
         )}
-      </section>
-
-      <section className="stack">
-        <div className="label">Room settings</div>
-        <div className="grid-3">
-          <div className="stat-block">
-            <div className="label">Rerolls</div>
-            <div className="v">{room.settings.rerolls}</div>
-          </div>
-          <div className="stat-block">
-            <div className="label">AI difficulty</div>
-            <div className="v" style={{ fontSize: '1.1rem', textTransform: 'uppercase' }}>
-              {room.settings.aiDifficulty}
-            </div>
-          </div>
-          <div className="stat-block">
-            <div className="label">Season</div>
-            <div className="v" style={{ fontSize: '1.1rem' }}>{room.settings.seasonLabel}</div>
-          </div>
-        </div>
       </section>
 
       {error && <div className="banner banner-danger">{error}</div>}

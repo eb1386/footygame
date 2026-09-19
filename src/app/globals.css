@@ -611,3 +611,52 @@ input[type='range'] { width: 100%; accent-color: var(--ink); }
   .scroll-y { max-height: none; }
   .slot { width: 24%; min-width: 54px; }
 }
+
+/* --- simplified draft + season ------------------------------------------- */
+
+.draft-top {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 10px;
+  align-items: center;
+  border: var(--b) solid var(--line);
+  background: var(--paper);
+  padding: 10px 12px;
+}
+
+.squad-header .name {
+  font-family: var(--display);
+  font-size: clamp(1.25rem, 5.2vw, 1.9rem);
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+}
+
+/* Your fixture: the one thing on the screen that should stop you scrolling past. */
+.my-match {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: var(--ink);
+  color: var(--paper);
+  border: var(--b) solid var(--line);
+  padding: 16px;
+  cursor: pointer;
+  font-family: inherit;
+  border-radius: 0;
+}
+.my-match .team-name { font-size: clamp(0.95rem, 3.6vw, 1.3rem); margin-top: 6px; }
+.my-match .score { color: var(--green); }
+.my-match .scorers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 2px solid rgba(255, 255, 255, 0.18);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+}

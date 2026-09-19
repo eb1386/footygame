@@ -143,9 +143,10 @@ function addSquad({ teamId, teamName, teamCode, kind, country, season, year, com
       };
     });
 
-  let built = build(baseStrength);
-  const derived = squadStrengthFrom(built.map((p) => p.overall));
-  built = build(Math.round((baseStrength + derived) / 2));
+  // Rate once, against the club's own prior. Feeding the derived squad strength back into
+  // the ratings and re-rating amplifies: a strong squad lifts its players, which lifts the
+  // squad, which lifts the players again, and a whole first eleven ends up in the nineties.
+  const built = build(baseStrength);
   const strength = squadStrengthFrom(built.map((p) => p.overall));
 
   // Keep squads to a sensible size — the draft offers a squad, not a whole club database.
@@ -227,14 +228,55 @@ function ingestFpl() {
     byClub.get(p.club).push(p);
   }
 
-  // Normalise the performance signals across the whole league so a rating means the same
-  // thing for a striker and a centre-back.
-  const maxPrice = Math.max(...raw.players.map((p) => p.price || 0), 1);
-  const minPrice = Math.min(...raw.players.map((p) => p.price || 0));
+  // Normalise performance and valuation WITHIN each position group.
+  //
+  // FPL scoring is heavily position-biased: a forward banks points for goals, a centre-back
+  // mostly does not. Ranking the whole league on one scale therefore rates every defender and
+  // goalkeeper far below every attacker, which is how Van Dijk ended up beneath a squad
+  // forward. Comparing defenders to defenders fixes it.
+  const groups = new Map();
+  for (const p of raw.players) {
+    if (!p.position) continue;
+    if (!groups.has(p.position)) groups.set(p.position, []);
+    groups.get(p.position).push(p);
+  }
+
+  const percentiles = new Map(); // position -> { price: sorted[], per90: sorted[] }
+  for (const [position, list] of groups) {
+    percentiles.set(position, {
+      price: list.map((p) => p.price || 0).sort((a, b) => a - b),
+      per90: list
+        .filter((p) => p.minutes >= 450)
+        .map((p) => (p.totalPoints / Math.max(1, p.minutes)) * 90)
+        .sort((a, b) => a - b),
+    });
+  }
+
+  /** Where a value sits in its position's distribution, 0-1. */
+  const rank = (sorted, value) => {
+    if (!sorted.length) return null;
+    let lo = 0;
+    let hi = sorted.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (sorted[mid] < value) lo = mid + 1;
+      else hi = mid;
+    }
+    return lo / Math.max(1, sorted.length - 1);
+  };
+
   const perf = (p) => {
-    const per90 = p.minutes > 180 ? (p.totalPoints / p.minutes) * 90 : null;
-    if (per90 == null) return null;
-    return Math.max(0, Math.min(1, per90 / 9));
+    // Five games of points is noise; require a meaningful sample before it counts.
+    if (p.minutes < 450) return null;
+    const dist = percentiles.get(p.position);
+    if (!dist) return null;
+    return rank(dist.per90, (p.totalPoints / Math.max(1, p.minutes)) * 90);
+  };
+
+  const valuation = (p) => {
+    const dist = percentiles.get(p.position);
+    if (!dist) return null;
+    return rank(dist.price, p.price || 0);
   };
 
   const clubMeta = new Map(PREMIER_LEAGUE_2025_26.map((c) => [c.fpl || c.name, c]));
@@ -270,7 +312,7 @@ function ingestFpl() {
         birthDate: p.birthDate,
         nationality: p.nationality,
         performance: perf(p),
-        valuation: (p.price - minPrice) / Math.max(1, maxPrice - minPrice),
+        valuation: valuation(p),
         starter: p.starts >= 3,
         };
       }),
