@@ -173,18 +173,17 @@ npm run test:sim     # long-run distribution check against real football benchma
 
 ## Deploying to Vercel
 
-1. Push the repo and import it into Vercel. It's a stock Next.js app; no configuration needed.
-2. **Add a Postgres database** (Neon or Supabase via the Vercel marketplace both work) and make
-   sure `DATABASE_URL` (or `POSTGRES_URL`) is set.
-3. Deploy.
+Import the repo at [vercel.com/new](https://vercel.com/new), then open the project's **Storage**
+tab and create a **Neon** Postgres database on the free plan. Vercel injects `DATABASE_URL`
+automatically; redeploy once and multiplayer is live. Full walkthrough in
+[DEPLOY.md](DEPLOY.md).
 
-The database is what makes multiplayer real: rooms are server-authoritative and survive restarts
-and cold starts. Without `DATABASE_URL` the app falls back to an in-process store — fine for local
-development, and the home screen says so, but rooms will not be shared between serverless
+The database is the only thing multiplayer needs. There are no WebSockets and no realtime
+service: the lobby polls every two seconds, and the season is generated in one deterministic pass
+when the host starts it, so playback is pure presentation and two players watching the same match
+are reading the same stored result. Without `DATABASE_URL` the app falls back to an in-process
+store — fine locally, and the home screen says so, but rooms won't be shared between serverless
 instances.
-
-Schema is created automatically on first use. Concurrency is handled with optimistic version
-checks, so two friends joining at the same moment can't clobber each other.
 
 ---
 
